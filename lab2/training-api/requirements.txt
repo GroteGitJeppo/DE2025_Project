@@ -6,3 +6,6 @@ tensorflow
 numpy
 h5py
 six
+joblib
+Flask
+scikit-learn
