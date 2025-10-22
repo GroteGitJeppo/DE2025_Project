@@ -141,47 +141,47 @@ def FinalModel(file_path: str) -> np.array:
     df_encoded[continuous_variables] = scaler.fit_transform(df_encoded[continuous_variables])
 
     # Turn df_encoded into csv and read it back to ensure all transformations are applied correctly
-    df_encoded.to_csv('California_Houses_Processed.csv', index=False)
+    df_encoded.to_csv('Data/California_Houses_Processed.csv', index=False)
 
+    
+    X = df_encoded.drop('house_value', axis=1)
+    y = df_encoded['house_value']
 
-    # X = df_encoded.drop('house_value', axis=1)
-    # y = df_encoded['house_value']
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # # Train-test split
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Extracting Top 15 Features Based on Importance
 
-    # # Extracting Top 15 Features Based on Importance
+    # Train XGBoost Model to get feature importance
+    xgb_model = XGBRegressor(n_estimators=100, random_state=42)
+    xgb_model.fit(X_train, y_train)
+    xgb_importances = xgb_model.feature_importances_
+    xgb_indices = np.argsort(xgb_importances)[::-1][:15]  # Top 15 features for XGBoost
+    top_15_features_xgb = X_train.columns[xgb_indices]
 
-    # # Train XGBoost Model to get feature importance
-    # xgb_model = XGBRegressor(n_estimators=100, random_state=42)
-    # xgb_model.fit(X_train, y_train)
-    # xgb_importances = xgb_model.feature_importances_
-    # xgb_indices = np.argsort(xgb_importances)[::-1][:15]  # Top 15 features for XGBoost
-    # top_15_features_xgb = X_train.columns[xgb_indices]
+    # Train-Test Split with Top 15 Features
 
-    # # Train-Test Split with Top 15 Features
+    X_train_xgb = X_train[top_15_features_xgb]
+    X_test_xgb = X_test[top_15_features_xgb]
 
-    # X_train_xgb = X_train[top_15_features_xgb]
-    # X_test_xgb = X_test[top_15_features_xgb]
+    # Grid Search for XGBoost with Top 15 Features
 
-    # # Grid Search for XGBoost with Top 15 Features
+    param_grid = {
+        'n_estimators': [100, 200, 300],
+        'max_depth': [3, 5, 7],
+        'learning_rate': [0.01, 0.1, 0.3],
+        'subsample': [0.8, 1]
+    }
 
-    # param_grid = {
-    #     'n_estimators': [100, 200, 300],
-    #     'max_depth': [3, 5, 7],
-    #     'learning_rate': [0.01, 0.1, 0.3],
-    #     'subsample': [0.8, 1]
-    # }
+    grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1, verbose=2)
+    grid_search.fit(X_train_xgb, y_train)
 
-    # grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1, verbose=2)
-    # grid_search.fit(X_train_xgb, y_train)
+    # Best XGBoost model after grid search
+    best_xgb_model = grid_search.best_estimator_
 
-    # # Best XGBoost model after grid search
-    # best_xgb_model = grid_search.best_estimator_
+    # XGBoost with top 15 features
+    y_pred_xgb = best_xgb_model.predict(X_test_xgb)
 
-    # # XGBoost with top 15 features
-    # y_pred_xgb = best_xgb_model.predict(X_test_xgb)
-
-    # return y_pred_xgb
+    return y_pred_xgb
 
 print(FinalModel('California_Houses.csv'))
