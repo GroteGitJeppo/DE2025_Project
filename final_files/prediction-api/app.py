@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 from house_price_predictor import HousePricePredictor
 
@@ -12,8 +12,12 @@ app.config["DEBUG"] = True
 def predict_str():
     # the prediction input data in the message body as a JSON payload
     prediction_input = request.get_json()
-    result = dp.predict_single_record(prediction_input)
-    return result
+    try:
+        result = dp.predict_single_record(prediction_input)  # now a float
+        return jsonify({"result": result}), 200
+    except Exception as e:
+        app.logger.exception("Prediction failed")
+        return jsonify({"error": str(e)}), 400
 
 
 dp = HousePricePredictor()
