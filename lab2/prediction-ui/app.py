@@ -19,19 +19,16 @@ def predict_house_price():
     elif request.method == "POST":
         prediction_input = [
             {
-            "Median_Income": float(request.form.get("Median_Income")),            # e.g. 8.3252
-            "Median_Age": int(request.form.get("Median_Age")),                   # e.g. 41
-            "Tot_Rooms": int(request.form.get("Tot_Rooms")),                     # e.g. 880
-            "Tot_Bedrooms": int(request.form.get("Tot_Bedrooms")),               # e.g. 129
-            "Population": int(request.form.get("Population")),                   # e.g. 322
-            "Households": int(request.form.get("Households")),                   # e.g. 126
-            "Latitude": float(request.form.get("Latitude")),                     # e.g. 37.88
-            "Longitude": float(request.form.get("Longitude")),                   # e.g. -122.23
-            "Distance_to_coast": float(request.form.get("Distance_to_coast")),   # e.g. 9263.04077285038
-            "Distance_to_LA": float(request.form.get("Distance_to_LA")),         # e.g. 556529.1583418
-            "Distance_to_SanDiego": float(request.form.get("Distance_to_SanDiego")), # e.g. 735501.80698384
-            "Distance_to_SanJose": float(request.form.get("Distance_to_SanJose")),   # e.g. 67432.5170008434
-            "Distance_to_SanFrancisco": float(request.form.get("Distance_to_SanFrancisco")) # e.g. 21250.2137667799
+            "bedrooms": float(request.form.get("bedrooms")),
+            "bathrooms": float(request.form.get("bathrooms")),
+            "sqft_living": int(float(request.form.get("sqft_living"))),
+            "sqft_lot": int(float(request.form.get("sqft_lot"))),
+            "floors": float(request.form.get("floors")),
+            "waterfront": int(request.form.get("waterfront")),
+            "view": int(request.form.get("view")),
+            "condition": int(request.form.get("condition")),
+            "sqft_above": int(float(request.form.get("sqft_above"))),
+            "sqft_basement": int(float(request.form.get("sqft_basement")))
             }
         ]
 
