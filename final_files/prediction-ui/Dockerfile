@@ -11,7 +11,7 @@ COPY . .
 # Expose the port that our app runs in
 EXPOSE 5000
 # Environment Variables
-ENV PREDICTOR_API=http://predictor-api-server:5000/predicthouse/
+ENV PREDICTOR_API=http://prediction-api:5000/predicthouse/
 #Add some meta data if necessary
 # Run our App
 CMD ["python3","app.py"]
