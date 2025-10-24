@@ -28,10 +28,6 @@ class HousePricePredictor:
 
         df = pd.read_json(StringIO(json.dumps(prediction_input)), orient='records')
         xNew = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'sqft_above', 'sqft_basement']]
-        dfcp = df.copy()
-        y_classes = self.model.predict(xNew)
-        logging.info(y_classes)
-        dfcp['house_value'] = y_classes.tolist()
-        status = (dfcp['house_value'][0] > 0.5)
-        # return the prediction outcome as a json message. 200 is HTTP status code 200, indicating successful completion
-        return str(status)
+        y_pred = self.model.predict(xNew)
+        house_value = float(y_pred[0])  # ensure JSON-serializable
+        return house_value
