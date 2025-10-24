@@ -44,7 +44,7 @@ def predict_house_price():
         prediction_value = res.json()['result']
         app.logger.info("Prediction Output : %s", prediction_value)
         return render_template("response_page.html",
-                               prediction_variable=eval(prediction_value))
+                               prediction_variable=float(prediction_value))
 
     else:
         return jsonify(message="Method Not Allowed"), 405  # The 405 Method Not Allowed should be used to indicate
