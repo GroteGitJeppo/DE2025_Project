@@ -8,7 +8,7 @@ import pandas as pd
 from flask import jsonify
 
 
-class DiabetesPredictor:
+class HousePricePredictor:
     def __init__(self):
         self.model = None
 
@@ -27,11 +27,11 @@ class DiabetesPredictor:
                 self.model = pickle.load(open("model.pkl", 'rb'))
 
         df = pd.read_json(StringIO(json.dumps(prediction_input)), orient='records')
-        xNew = df[['ntp', 'pgc', 'dbp', 'tsft', 'si', 'bmi', 'dpf', 'age']]
+        xNew = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'sqft_above', 'sqft_basement']]
         dfcp = df.copy()
         y_classes = self.model.predict(xNew)
         logging.info(y_classes)
-        dfcp['pclass'] = y_classes.tolist()
-        status = (dfcp['pclass'][0] > 0.5)
+        dfcp['house_value'] = y_classes.tolist()
+        status = (dfcp['house_value'][0] > 0.5)
         # return the prediction outcome as a json message. 200 is HTTP status code 200, indicating successful completion
         return str(status)
