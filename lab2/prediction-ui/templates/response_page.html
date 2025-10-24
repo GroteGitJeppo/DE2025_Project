@@ -1,13 +1,13 @@
 <html>
 <head>
-    <title>Likelihood of Diabetes</title>
+    <title>Median House Price Prediction</title>
 </head>
 <body>
 
-{% if prediction_variable==true %}
-    <p>It is likely that you may have diabetes.</p>
+{% if prediction_variable %}
+    <p>The predicted median house price in your region is: {{ prediction_variable }}</p>
 {% else %}
-    <p>It is unlikely that you have diabetes.</p>
+    <p>Prediction not available.</p>
 {% endif %}
 </body>
 </html>

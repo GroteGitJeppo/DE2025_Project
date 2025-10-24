@@ -11,22 +11,27 @@ app = Flask(__name__)
 
 # A decorator used to tell the application
 # which URL is associated function
-@app.route('/checkdiabetes', methods=["GET", "POST"])
-def check_diabetes():
+@app.route('/predicthouse', methods=["GET", "POST"])
+def predict_house_price():
     if request.method == "GET":
         return render_template("input_form_page.html")
 
     elif request.method == "POST":
         prediction_input = [
             {
-                "ntp": int(request.form.get("ntp")),  # getting input with name = ntp in HTML form
-                "pgc": int(request.form.get("pgc")),  # getting input with name = pgc in HTML form
-                "dbp": int(request.form.get("dbp")),
-                "tsft": int(request.form.get("tsft")),
-                "si": int(request.form.get("si")),
-                "bmi": float(request.form.get("bmi")),
-                "dpf": float(request.form.get("dpf")),
-                "age": int(request.form.get("age"))
+            "Median_Income": float(request.form.get("Median_Income")),            # e.g. 8.3252
+            "Median_Age": int(request.form.get("Median_Age")),                   # e.g. 41
+            "Tot_Rooms": int(request.form.get("Tot_Rooms")),                     # e.g. 880
+            "Tot_Bedrooms": int(request.form.get("Tot_Bedrooms")),               # e.g. 129
+            "Population": int(request.form.get("Population")),                   # e.g. 322
+            "Households": int(request.form.get("Households")),                   # e.g. 126
+            "Latitude": float(request.form.get("Latitude")),                     # e.g. 37.88
+            "Longitude": float(request.form.get("Longitude")),                   # e.g. -122.23
+            "Distance_to_coast": float(request.form.get("Distance_to_coast")),   # e.g. 9263.04077285038
+            "Distance_to_LA": float(request.form.get("Distance_to_LA")),         # e.g. 556529.1583418
+            "Distance_to_SanDiego": float(request.form.get("Distance_to_SanDiego")), # e.g. 735501.80698384
+            "Distance_to_SanJose": float(request.form.get("Distance_to_SanJose")),   # e.g. 67432.5170008434
+            "Distance_to_SanFrancisco": float(request.form.get("Distance_to_SanFrancisco")) # e.g. 21250.2137667799
             }
         ]
 

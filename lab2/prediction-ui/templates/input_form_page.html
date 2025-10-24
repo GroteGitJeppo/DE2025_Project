@@ -1,34 +1,51 @@
 <html>
 <head>
-    <title>Diabetes Check Form</title>
+    <title>Housing Price Calculator</title>
 </head>
 <body>
 
-<form action="/checkdiabetes" method="POST">
-    <h1> Check My Diabetes</h1>
-    <label for="ntp">Number of times pregnant:</label>
-    <input type="text" id="ntp" name="ntp" placeholder="ntp"> <br>
+<form action="/predicthouse" method="POST">
+    <h1> Predict Median House Price in your region</h1>
 
-    <label for="pgc">Plasma glucose concentration a 2 hours in an oral glucose tolerance test:</label>
-    <input type="text" id="pgc" name="pgc" placeholder="pgc"> <br>
+    <label for="Median_Income">Median Income:</label>
+    <input type="number" id="Median_Income" name="Median_Income" placeholder="8.3252" step="any"> <br>
 
-    <label for="dbp">Diastolic blood pressure (mm Hg):</label>
-    <input type="text" id="dbp" name="dbp" placeholder="dbp"> <br>
+    <label for="Median_Age">Median Age:</label>
+    <input type="number" id="Median_Age" name="Median_Age" placeholder="41" step="1"> <br>
 
-    <label for="tsft">Triceps skin fold thickness (mm):</label>
-    <input type="text" id="tsft" name="tsft" placeholder="tsft"> <br>
+    <label for="Tot_Rooms">Total Rooms:</label>
+    <input type="number" id="Tot_Rooms" name="Tot_Rooms" placeholder="880" step="1"> <br>
 
-    <label for="si">2-Hour serum insulin (mu U/ml):</label>
-    <input type="text" id="si" name="si" placeholder="si"> <br>
+    <label for="Tot_Bedrooms">Total Bedrooms:</label>
+    <input type="number" id="Tot_Bedrooms" name="Tot_Bedrooms" placeholder="129" step="1"> <br>
 
-    <label for="bmi">Body mass index:</label>
-    <input type="text" id="bmi" name="bmi" placeholder="bmi"> <br>
+    <label for="Population">Population:</label>
+    <input type="number" id="Population" name="Population" placeholder="322" step="1"> <br>
 
-    <label for="dpf">Diabetes pedigree function:</label>
-    <input type="text" id="dpf" name="dpf" placeholder="dpf"> <br>
+    <label for="Households">Households:</label>
+    <input type="number" id="Households" name="Households" placeholder="126" step="1"> <br>
 
-    <label for="age">Age (years):</label>
-    <input type="text" id="age" name="age" placeholder="age"> <br>
+    <label for="Latitude">Latitude:</label>
+    <input type="number" id="Latitude" name="Latitude" placeholder="37.88" step="any"> <br>
+
+    <label for="Longitude">Longitude:</label>
+    <input type="number" id="Longitude" name="Longitude" placeholder="-122.23" step="any"> <br>
+
+    <label for="Distance_to_coast">Distance to coast (meters):</label>
+    <input type="number" id="Distance_to_coast" name="Distance_to_coast" placeholder="9263.04077285038" step="any"> <br>
+
+    <label for="Distance_to_LA">Distance to LA (meters):</label>
+    <input type="number" id="Distance_to_LA" name="Distance_to_LA" placeholder="556529.1583418" step="any"> <br>
+
+    <label for="Distance_to_SanDiego">Distance to San Diego (meters):</label>
+    <input type="number" id="Distance_to_SanDiego" name="Distance_to_SanDiego" placeholder="735501.80698384" step="any"> <br>
+
+    <label for="Distance_to_SanJose">Distance to San Jose (meters):</label>
+    <input type="number" id="Distance_to_SanJose" name="Distance_to_SanJose" placeholder="67432.5170008434" step="any"> <br>
+
+    <label for="Distance_to_SanFrancisco">Distance to San Francisco (meters):</label>
+    <input type="number" id="Distance_to_SanFrancisco" name="Distance_to_SanFrancisco" placeholder="21250.2137667799" step="any"> <br>
+
     <p><input type='submit' value='Check'/></p>
 </form>
 
