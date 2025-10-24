@@ -24,7 +24,7 @@ class HousePricePredictor:
                 self.model = pickle.load(open(file_path, 'rb'))
             except KeyError:
                 print("MODEL_REPO is undefined")
-                self.model = pickle.load(open("model.pkl", 'rb'))
+                self.model = pickle.load(open("xgboost_model.pkl", 'rb'))
 
         df = pd.read_json(StringIO(json.dumps(prediction_input)), orient='records')
         xNew = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'sqft_above', 'sqft_basement']]

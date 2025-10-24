@@ -1,0 +1,656 @@
+# PIPELINE DEFINITION
+# Name: house-price-prediction-pipeline
+# Inputs:
+#    data_bucket: str
+#    file_name: str
+#    model_repo: str
+#    project_id: str
+components:
+  comp-compare-model:
+    executorLabel: exec-compare-model
+    inputDefinitions:
+      parameters:
+        lr_metrics:
+          parameterType: STRUCT
+        xgboost_metrics:
+          parameterType: STRUCT
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-condition-1:
+    dag:
+      tasks:
+        upload-model-to-gcs:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-upload-model-to-gcs
+          inputs:
+            artifacts:
+              model:
+                componentInputArtifact: pipelinechannel--train-xgboost-out_model
+            parameters:
+              model_repo:
+                componentInputParameter: pipelinechannel--model_repo
+              project_id:
+                componentInputParameter: pipelinechannel--project_id
+          taskInfo:
+            name: upload-model-to-gcs
+    inputDefinitions:
+      artifacts:
+        pipelinechannel--train-xgboost-out_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        pipelinechannel--compare-model-Output:
+          parameterType: STRING
+        pipelinechannel--model_repo:
+          parameterType: STRING
+        pipelinechannel--project_id:
+          parameterType: STRING
+  comp-condition-2:
+    dag:
+      tasks:
+        upload-model-to-gcs-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-upload-model-to-gcs-2
+          inputs:
+            artifacts:
+              model:
+                componentInputArtifact: pipelinechannel--train-lr-out_model
+            parameters:
+              model_repo:
+                componentInputParameter: pipelinechannel--model_repo
+              project_id:
+                componentInputParameter: pipelinechannel--project_id
+          taskInfo:
+            name: upload-model-to-gcs-2
+    inputDefinitions:
+      artifacts:
+        pipelinechannel--train-lr-out_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        pipelinechannel--compare-model-Output:
+          parameterType: STRING
+        pipelinechannel--model_repo:
+          parameterType: STRING
+        pipelinechannel--project_id:
+          parameterType: STRING
+  comp-download-data:
+    executorLabel: exec-download-data
+    inputDefinitions:
+      parameters:
+        bucket:
+          parameterType: STRING
+        file_name:
+          parameterType: STRING
+        project_id:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-lr:
+    executorLabel: exec-train-lr
+    inputDefinitions:
+      artifacts:
+        test_set:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        train_set:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        out_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        metrics:
+          parameterType: STRUCT
+  comp-train-test-split:
+    executorLabel: exec-train-test-split
+    inputDefinitions:
+      artifacts:
+        dataset:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        dataset_test:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        dataset_train:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-xgboost:
+    executorLabel: exec-train-xgboost
+    inputDefinitions:
+      artifacts:
+        test_set:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        train_set:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        out_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        metrics:
+          parameterType: STRUCT
+  comp-upload-model-to-gcs:
+    executorLabel: exec-upload-model-to-gcs
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        model_repo:
+          parameterType: STRING
+        project_id:
+          parameterType: STRING
+  comp-upload-model-to-gcs-2:
+    executorLabel: exec-upload-model-to-gcs-2
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        model_repo:
+          parameterType: STRING
+        project_id:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-compare-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - compare_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef compare_model(xgboost_metrics: dict, lr_metrics: dict) -> str:\n\
+          \    import logging\n    import json\n    import sys\n    logging.basicConfig(stream=sys.stdout,\
+          \ level=logging.INFO)\n    logging.info(xgboost_metrics)\n    logging.info(lr_metrics)\n\
+          \n    xgboost_r2 = xgboost_metrics.get('r2')\n    xgboost_rmse = xgboost_metrics.get('rmse')\n\
+          \n    lr_r2 = lr_metrics.get('r2')\n    lr_rmse = lr_metrics.get('rmse')\n\
+          \n\n    # Compare metrics and select the best model\n    if xgboost_r2 >\
+          \ lr_r2:\n        return \"XGBoost\"\n    elif xgboost_r2 == lr_r2:\n  \
+          \      # If R2 scores are equal, compare RMSE\n        if xgboost_rmse <\
+          \ lr_rmse:\n            return \"XGBoost\"\n        else:\n            return\
+          \ \"LR\"\n    else:\n        return \"LR\"\n\n"
+        image: python:3.10.7-slim
+    exec-download-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - download_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'google-cloud-storage'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef download_data(project_id: str, bucket: str, file_name: str, dataset:\
+          \ Output[Dataset]):\n    '''download data'''\n    from google.cloud import\
+          \ storage\n    import pandas as pd\n    import logging \n    import sys\n\
+          \n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\n\n   \
+          \ # Downloaing the file from a google bucket \n    client = storage.Client(project=project_id)\n\
+          \    bucket = client.bucket(bucket)\n    blob = bucket.blob(file_name)\n\
+          \    blob.download_to_filename(dataset.path + \".csv\")\n    logging.info('Downloaded\
+          \ Data!')\n\n"
+        image: python:3.10.7-slim
+    exec-train-lr:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_lr
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn==1.3.2'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_lr (train_set: Input[Dataset], test_set: Input[Dataset],\
+          \ out_model: Output[Model]) -> NamedTuple('outputs', metrics=dict):\n  \
+          \  '''train a LinearRegression with default parameters'''\n    import pandas\
+          \ as pd\n    import numpy as np\n    from sklearn.linear_model import LinearRegression\n\
+          \    from sklearn.metrics import mean_squared_error, mean_absolute_error,\
+          \ r2_score\n    import json\n    import logging \n    import sys\n    import\
+          \ os\n    import pickle  \n\n    logging.basicConfig(stream=sys.stdout,\
+          \ level=logging.INFO)\n\n    # Load the train and test sets into dataframes\n\
+          \    df_train = pd.read_csv(train_set.path+\".csv\")\n    df_test = pd.read_csv(test_set.path+\"\
+          .csv\")\n\n    logging.info(df_train.columns)\n    logging.info(df_test.columns)\
+          \  \n\n    # split into input (X) and output (Y) variables\n    X_train,\
+          \ y_train = df_train.drop('house_value', axis=1), df_train['house_value']\n\
+          \    X_test, y_test = df_test.drop('house_value', axis=1), df_test['house_value']\n\
+          \n    # Fit the model\n    lr_model = LinearRegression()\n    lr_model.fit(X_train,\
+          \ y_train)\n    lr_importances = np.abs(lr_model.coef_)  # Absolute value\
+          \ of coefficients\n    lr_indices = np.argsort(lr_importances)[::-1][:15]\
+          \  # Top 15 features for Linear Regression\n    top_15_features_lr = X_train.columns[lr_indices]\n\
+          \n    # Train-Test Split with Top 15 Features\n    X_train = X_train[top_15_features_lr]\n\
+          \    X_test = X_test[top_15_features_lr]\n\n    # Retrain model using only\
+          \ top 15 features\n    lr_model_top_15 = LinearRegression()\n    lr_model_top_15.fit(X_train,\
+          \ y_train)\n\n    # Predict using the retrained model\n    y_pred = lr_model_top_15.predict(X_test)\n\
+          \n    # Calculate evaluation metrics and store them in a dictionary\n  \
+          \  metrics_dict = {\n        \"mse\": mean_squared_error(y_test, y_pred),\n\
+          \        \"mae\": mean_absolute_error(y_test, y_pred),\n        \"r2\":\
+          \ r2_score(y_test, y_pred),\n        \"rmse\": np.sqrt(mean_squared_error(y_test,\
+          \ y_pred))\n    }    \n    logging.info(metrics_dict)  \n\n    # Store some\
+          \ metadata\n    out_model.metadata[\"file_type\"] = \".pkl\"\n    out_model.metadata[\"\
+          algorithm\"] = \"lr\"\n\n    # Save the model to a pickle file\n    model_file\
+          \ = out_model.path + \".pkl\"\n    with open(model_file, 'wb') as f:  \n\
+          \        pickle.dump(lr_model_top_15, f)   \n\n    # Return the metrics\
+          \ dictionary as an output\n    outputs = NamedTuple('outputs', metrics=dict)\n\
+          \    return outputs(metrics_dict)\n\n"
+        image: python:3.10.7-slim
+    exec-train-test-split:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_test_split
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn==1.3.2'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_test_split(dataset: Input[Dataset], dataset_train: Output[Dataset],\
+          \ dataset_test: Output[Dataset]):\n    '''train_test_split'''\n    import\
+          \ pandas as pd\n    import logging \n    import sys\n    from sklearn.model_selection\
+          \ import train_test_split\n\n    logging.basicConfig(stream=sys.stdout,\
+          \ level=logging.INFO) \n\n    # Split into train and test\n    data = pd.read_csv(dataset.path+\"\
+          .csv\", index_col=None)\n    train, test = train_test_split(data, test_size=0.2,\
+          \ random_state=42)\n    train.to_csv(dataset_train.path + \".csv\" , index=False,\
+          \ encoding='utf-8-sig')\n    test.to_csv(dataset_test.path + \".csv\" ,\
+          \ index=False, encoding='utf-8-sig')\n\n"
+        image: python:3.10.7-slim
+    exec-train-xgboost:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_xgboost
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'xgboost'\
+          \ 'scikit-learn==1.3.2'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.14.6' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_xgboost (train_set: Input[Dataset], test_set: Input[Dataset],\
+          \ out_model: Output[Model]) -> NamedTuple('outputs', metrics=dict):\n  \
+          \  '''train a XGBoost model with default parameters'''\n    import pandas\
+          \ as pd\n    import numpy as np\n    import pickle\n    from xgboost import\
+          \ XGBRegressor\n    from sklearn.model_selection import GridSearchCV\n \
+          \   from sklearn.metrics import mean_squared_error, mean_absolute_error,\
+          \ r2_score\n    import json\n    import logging \n    import sys\n    import\
+          \ os\n\n    # Load the train and test sets into dataframes\n    df_train\
+          \ = pd.read_csv(train_set.path+\".csv\")\n    df_test = pd.read_csv(test_set.path+\"\
+          .csv\")\n\n    logging.info(df_train.columns)\n    logging.info(df_test.columns)\
+          \  \n\n    # split into input (X) and output (Y) variables\n    X_train,\
+          \ y_train = df_train.drop('house_value', axis=1), df_train['house_value']\n\
+          \    X_test, y_test = df_test.drop('house_value', axis=1), df_test['house_value']\n\
+          \n    # Train XGBoost Model to get feature importance\n    xgb_model = XGBRegressor(n_estimators=100,\
+          \ random_state=42)\n    xgb_model.fit(X_train, y_train)\n    xgb_importances\
+          \ = xgb_model.feature_importances_\n    xgb_indices = np.argsort(xgb_importances)[::-1][:15]\
+          \  # Top 15 features for XGBoost\n    top_15_features_xgb = X_train.columns[xgb_indices]\n\
+          \n    # Train-Test Split with Top 15 Features\n    X_train = X_train[top_15_features_xgb]\n\
+          \    X_test = X_test[top_15_features_xgb]\n\n    # Grid Search for XGBoost\
+          \ with Top 15 Features\n    param_grid = {\n        'n_estimators': [100,\
+          \ 200, 300],\n        'max_depth': [3, 5, 7],\n        'learning_rate':\
+          \ [0.01, 0.1, 0.3],\n        'subsample': [0.8, 1]\n    }\n\n    # Grid\
+          \ Search\n    grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid,\
+          \ cv=5, scoring='neg_mean_squared_error', n_jobs=-1, verbose=2)\n    grid_search.fit(X_train,\
+          \ y_train)\n\n    # Best XGBoost model after grid search\n    best_xgb_model\
+          \ = grid_search.best_estimator_\n\n    # XGBoost with top 15 features\n\
+          \    y_pred = best_xgb_model.predict(X_test)\n\n    # evaluate the model\n\
+          \    y_pred = best_xgb_model.predict(X_test)\n\n    # Calculate evaluation\
+          \ metrics and store them in a dictionary\n    metrics_dict = {\n       \
+          \ \"mse\": mean_squared_error(y_test, y_pred),\n        \"mae\": mean_absolute_error(y_test,\
+          \ y_pred),\n        \"r2\": r2_score(y_test, y_pred),\n        \"rmse\"\
+          : np.sqrt(mean_squared_error(y_test, y_pred))\n    }    \n    logging.info(metrics_dict)\
+          \  \n\n    # Store some metadata\n    out_model.metadata[\"file_type\"]\
+          \ = \".pkl\"\n    out_model.metadata[\"algorithm\"] = \"xgboost\"\n\n  \
+          \  # Save the model to a pickle file\n    model_file = out_model.path +\
+          \ \".pkl\"\n    with open(model_file, 'wb') as f:  \n        pickle.dump(best_xgb_model,\
+          \ f)   \n\n    # Return the metrics dictionary as an output\n    outputs\
+          \ = NamedTuple('outputs', metrics=dict)\n    return outputs(metrics_dict)\n\
+          \n"
+        image: python:3.10.7-slim
+    exec-upload-model-to-gcs:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - upload_model_to_gcs
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef upload_model_to_gcs(project_id: str, model_repo: str, model:\
+          \ Input[Model]):\n    '''upload model to gsc'''\n    from google.cloud import\
+          \ storage   \n    import logging \n    import sys\n\n    logging.basicConfig(stream=sys.stdout,\
+          \ level=logging.INFO)    \n\n    # upload the model to GCS\n    client =\
+          \ storage.Client(project=project_id)\n    bucket = client.bucket(model_repo)\n\
+          \    blob = bucket.blob(str(model.metadata[\"algorithm\"]) + '_model' +\
+          \ str(model.metadata[\"file_type\"])) \n    blob.upload_from_filename(model.path\
+          \ + str(model.metadata[\"file_type\"]))       \n\n    print(\"Saved the\
+          \ model to GCP bucket : \" + model_repo)\n\n"
+        image: python:3.10.7-slim
+    exec-upload-model-to-gcs-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - upload_model_to_gcs
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'google-cloud-storage'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef upload_model_to_gcs(project_id: str, model_repo: str, model:\
+          \ Input[Model]):\n    '''upload model to gsc'''\n    from google.cloud import\
+          \ storage   \n    import logging \n    import sys\n\n    logging.basicConfig(stream=sys.stdout,\
+          \ level=logging.INFO)    \n\n    # upload the model to GCS\n    client =\
+          \ storage.Client(project=project_id)\n    bucket = client.bucket(model_repo)\n\
+          \    blob = bucket.blob(str(model.metadata[\"algorithm\"]) + '_model' +\
+          \ str(model.metadata[\"file_type\"])) \n    blob.upload_from_filename(model.path\
+          \ + str(model.metadata[\"file_type\"]))       \n\n    print(\"Saved the\
+          \ model to GCP bucket : \" + model_repo)\n\n"
+        image: python:3.10.7-slim
+pipelineInfo:
+  name: house-price-prediction-pipeline
+root:
+  dag:
+    tasks:
+      compare-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-compare-model
+        dependentTasks:
+        - train-lr
+        - train-xgboost
+        inputs:
+          parameters:
+            lr_metrics:
+              taskOutputParameter:
+                outputParameterKey: metrics
+                producerTask: train-lr
+            xgboost_metrics:
+              taskOutputParameter:
+                outputParameterKey: metrics
+                producerTask: train-xgboost
+        taskInfo:
+          name: compare-model
+      condition-1:
+        componentRef:
+          name: comp-condition-1
+        dependentTasks:
+        - compare-model
+        - train-xgboost
+        inputs:
+          artifacts:
+            pipelinechannel--train-xgboost-out_model:
+              taskOutputArtifact:
+                outputArtifactKey: out_model
+                producerTask: train-xgboost
+          parameters:
+            pipelinechannel--compare-model-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: compare-model
+            pipelinechannel--model_repo:
+              componentInputParameter: model_repo
+            pipelinechannel--project_id:
+              componentInputParameter: project_id
+        taskInfo:
+          name: condition-1
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--compare-model-Output']
+            == 'XGBoost'
+      condition-2:
+        componentRef:
+          name: comp-condition-2
+        dependentTasks:
+        - compare-model
+        - train-lr
+        inputs:
+          artifacts:
+            pipelinechannel--train-lr-out_model:
+              taskOutputArtifact:
+                outputArtifactKey: out_model
+                producerTask: train-lr
+          parameters:
+            pipelinechannel--compare-model-Output:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: compare-model
+            pipelinechannel--model_repo:
+              componentInputParameter: model_repo
+            pipelinechannel--project_id:
+              componentInputParameter: project_id
+        taskInfo:
+          name: condition-2
+        triggerPolicy:
+          condition: inputs.parameter_values['pipelinechannel--compare-model-Output']
+            == 'LR'
+      download-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-download-data
+        inputs:
+          parameters:
+            bucket:
+              componentInputParameter: data_bucket
+            file_name:
+              componentInputParameter: file_name
+            project_id:
+              componentInputParameter: project_id
+        taskInfo:
+          name: download-data
+      train-lr:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-lr
+        dependentTasks:
+        - train-test-split
+        inputs:
+          artifacts:
+            test_set:
+              taskOutputArtifact:
+                outputArtifactKey: dataset_test
+                producerTask: train-test-split
+            train_set:
+              taskOutputArtifact:
+                outputArtifactKey: dataset_train
+                producerTask: train-test-split
+        taskInfo:
+          name: train-lr
+      train-test-split:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-test-split
+        dependentTasks:
+        - download-data
+        inputs:
+          artifacts:
+            dataset:
+              taskOutputArtifact:
+                outputArtifactKey: dataset
+                producerTask: download-data
+        taskInfo:
+          name: train-test-split
+      train-xgboost:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-xgboost
+        dependentTasks:
+        - train-test-split
+        inputs:
+          artifacts:
+            test_set:
+              taskOutputArtifact:
+                outputArtifactKey: dataset_test
+                producerTask: train-test-split
+            train_set:
+              taskOutputArtifact:
+                outputArtifactKey: dataset_train
+                producerTask: train-test-split
+        taskInfo:
+          name: train-xgboost
+  inputDefinitions:
+    parameters:
+      data_bucket:
+        parameterType: STRING
+      file_name:
+        parameterType: STRING
+      model_repo:
+        parameterType: STRING
+      project_id:
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.14.6
