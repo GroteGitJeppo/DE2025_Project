@@ -1,4 +1,17 @@
 # DE2025
 
-The lab materials for the Data Engineering course at JADS, 2025/2026 edition.
+How to run the files
+
+cd prediction-ui
+sudo docker build -t prediction-ui:0.0.1 .
+sudo docker run -p 5001:5000 -d --name=prediction-ui prediction-ui:0.0.1
+
+cd ..
+cd prediction-api
+sudo docker build -t prediction-api:0.0.1 .
+sudo docker run -p 5000:5000 -d --name=predictor-server-api prediction-api:0.0.1
+
+sudo docker network create house-predictor-network
+sudo docker network connect house-predictor-network predictor-server-api
+sudo docker network connect house-predictor-network prediction-ui
 
