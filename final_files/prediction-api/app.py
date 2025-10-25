@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 dp = HousePricePredictor()
-@app.route('/predicthouse/', methods=['POST']) # path of the endpoint. Except only HTTP POST request
+@app.route('/predicthouse', methods=['POST']) # path of the endpoint. Except only HTTP POST request
 def predict_str():
     prediction_input = request.get_json()
     try:

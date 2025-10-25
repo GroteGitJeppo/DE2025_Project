@@ -39,12 +39,14 @@ def predict_house_price():
         # json.dumps() function will convert a subset of Python objects into a json string.
         # json.loads() method can be used to parse a valid JSON string and convert it into a Python Dictionary.
         predictor_api_url = os.environ['PREDICTOR_API']
-        res = requests.post(predictor_api_url, json=json.loads(json.dumps(prediction_input)))
+        res = requests.post(url.rstrip('/'), json=prediction_input, timeout=15)
+        res.raise_for_status()
+        try:
+            payload = res.json()
+        except requests.exceptions.JSONDecodeError:
+            app.logger.error("Non-JSON response from predictor: %s", res.text[:200])
+            return render_template("response_page.html", prediction_variable="Invalid response from predictor."), 502
 
-        prediction_value = res.json()['result']
-        app.logger.info("Prediction Output : %s", prediction_value)
-        return render_template("response_page.html",
-                               prediction_variable=float(prediction_value))
 
     else:
         return jsonify(message="Method Not Allowed"), 405  # The 405 Method Not Allowed should be used to indicate
