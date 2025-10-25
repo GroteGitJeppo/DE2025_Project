@@ -39,7 +39,7 @@ def predict_house_price():
         # json.dumps() function will convert a subset of Python objects into a json string.
         # json.loads() method can be used to parse a valid JSON string and convert it into a Python Dictionary.
         predictor_api_url = os.environ['PREDICTOR_API']
-        res = requests.post(url.rstrip('/'), json=prediction_input, timeout=15)
+        res = requests.post(predictor_api_url, json=prediction_input, timeout=15)
         res.raise_for_status()
         try:
             payload = res.json()
