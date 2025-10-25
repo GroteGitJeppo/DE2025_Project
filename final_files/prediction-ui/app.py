@@ -8,6 +8,20 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = app.logger
 
+def format_eur(value):
+    """Format the returned JSON, since we are using a Regressor to predict house prices."""
+    try:
+        # Round up to 2 decimals manually
+        value = float(value)
+        rounded = int(value * 100 + 0.9999) / 100.0  # mimic ROUND_UP
+        s = f"{rounded:,.2f}"  # e.g. 1,234,567.89
+        # convert to European style: dots for thousands, comma for decimals
+        s = s.replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"€ {s}"
+    except Exception:
+        return f"€ {value}"
+
+
 @app.route('/predicthouse', methods=["GET", "POST"])
 def predict_house_price():
     if request.method == "GET":
@@ -50,7 +64,11 @@ def predict_house_price():
         if isinstance(payload, dict) and 'result' in payload:
             prediction_value = payload['result']
             logger.info("Prediction Output : %s", prediction_value)
-            return render_template("response_page.html", prediction_variable=float(prediction_value))
+
+            # Format nicely with euro sign and commas/dots
+            formatted_value = format_eur(prediction_value)
+            return render_template("response_page.html", prediction_variable=formatted_value)
+
 
         logger.error("Unexpected JSON shape: %s", payload)
         return render_template("response_page.html", prediction_variable="Unexpected predictor response."), 502
@@ -59,7 +77,7 @@ def predict_house_price():
         logger.exception("Error calling predictor API")
         return render_template("response_page.html", prediction_variable="Could not reach predictor."), 502
     
-    
+
 # The code within this conditional block will only run the python file is executed as a
 # script. See https://realpython.com/if-name-main-python/
 if __name__ == '__main__':
