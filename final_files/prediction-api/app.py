@@ -10,11 +10,10 @@ app.config["DEBUG"] = True
 dp = HousePricePredictor()
 @app.route('/predicthouse/', methods=['POST']) # path of the endpoint. Except only HTTP POST request
 def predict_str():
-    # the prediction input data in the message body as a JSON payload
     prediction_input = request.get_json()
     try:
         result = dp.predict_single_record(prediction_input)
-        return result
+        return jsonify({"result": result})
     except Exception as e:
         app.logger.exception("Prediction failed")
         return jsonify({"error": str(e)}), 400
