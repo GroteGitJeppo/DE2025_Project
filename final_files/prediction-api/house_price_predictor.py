@@ -29,5 +29,5 @@ class HousePricePredictor:
         df = pd.read_json(StringIO(json.dumps(prediction_input)), orient='records')
         xNew = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'sqft_above', 'sqft_basement']]
         y_pred = self.model.predict(xNew)
-        house_value = float(y_pred[0])  # ensure JSON-serializable
+        house_value = float(y_pred[0]) 
         return house_value
