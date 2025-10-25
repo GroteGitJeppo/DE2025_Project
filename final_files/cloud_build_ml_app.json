@@ -6,7 +6,7 @@
         "build",
         "-t",
         "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/prediction-api:0.0.1",
-        "./lab2/prediction-api"
+        "./final_files/prediction-api"
       ]
     },
     {
@@ -15,7 +15,7 @@
         "build",
         "-t",
         "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/prediction-ui:0.0.1",
-        "./lab2/prediction-ui"
+        "./final_files/prediction-ui"
       ]
     },
     {

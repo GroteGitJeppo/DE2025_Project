@@ -15,6 +15,6 @@ sudo docker network create house-predictor-network
 sudo docker network connect house-predictor-network prediction-api
 sudo docker network connect house-predictor-network prediction-ui
 
-sudo docker build -t prediction-api:0.0.1 .
-sudo docker rm -f prediction-api || true
-sudo docker run -p 5000:5000 -d --name=prediction-api prediction-api:0.0.1
+sudo docker build -t prediction-ui:0.0.1 .
+sudo docker rm -f prediction-ui || true
+sudo docker run -p 5001:5000 -d --name=prediction-ui prediction-ui:0.0.1
