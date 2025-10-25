@@ -1,6 +1,6 @@
 {
   "project_id": "de2025-472319",
   "data_bucket": "data_de2025_2062061",
-  "file_name": "California_Housing_Processed.csv",
+  "file_name": "California_Houses_Processed.csv",
   "model_repo": "models_de2025_2062061"
 }
