@@ -1,5 +1,5 @@
 # PIPELINE DEFINITION
-# Name: house-price-prediction-pipeline
+# Name: house_price_prediction_pipeline
 # Inputs:
 #    data_bucket: str
 #    file_name: str
@@ -481,7 +481,7 @@ deploymentSpec:
           \ model to GCP bucket : \" + model_repo)\n\n"
         image: python:3.10.7-slim
 pipelineInfo:
-  name: house-price-prediction-pipeline
+  name: house_price_prediction_pipeline
 root:
   dag:
     tasks:
