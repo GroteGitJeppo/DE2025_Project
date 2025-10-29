@@ -6,7 +6,7 @@
         "build",
         "-t",
         "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/prediction-api:0.0.1",
-        "./final_files/prediction-api"
+        "./final_files/prediction-api-lr"
       ]
     },
     {
