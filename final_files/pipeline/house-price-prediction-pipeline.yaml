@@ -5,6 +5,8 @@
 #    file_name: str
 #    model_repo: str
 #    project_id: str
+#    trigger_id_lr: str
+#    trigger_id_xgb: str
 components:
   comp-compare-model:
     executorLabel: exec-compare-model
@@ -21,6 +23,21 @@ components:
   comp-condition-1:
     dag:
       tasks:
+        run-build-trigger:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-build-trigger
+          dependentTasks:
+          - upload-model-to-gcs
+          inputs:
+            parameters:
+              project_id:
+                componentInputParameter: pipelinechannel--project_id
+              trigger_id:
+                componentInputParameter: pipelinechannel--trigger_id_xgb
+          taskInfo:
+            name: run-build-trigger
         upload-model-to-gcs:
           cachingOptions:
             enableCache: true
@@ -50,9 +67,26 @@ components:
           parameterType: STRING
         pipelinechannel--project_id:
           parameterType: STRING
+        pipelinechannel--trigger_id_xgb:
+          parameterType: STRING
   comp-condition-2:
     dag:
       tasks:
+        run-build-trigger-2:
+          cachingOptions:
+            enableCache: true
+          componentRef:
+            name: comp-run-build-trigger-2
+          dependentTasks:
+          - upload-model-to-gcs-2
+          inputs:
+            parameters:
+              project_id:
+                componentInputParameter: pipelinechannel--project_id
+              trigger_id:
+                componentInputParameter: pipelinechannel--trigger_id_lr
+          taskInfo:
+            name: run-build-trigger-2
         upload-model-to-gcs-2:
           cachingOptions:
             enableCache: true
@@ -82,6 +116,8 @@ components:
           parameterType: STRING
         pipelinechannel--project_id:
           parameterType: STRING
+        pipelinechannel--trigger_id_lr:
+          parameterType: STRING
   comp-download-data:
     executorLabel: exec-download-data
     inputDefinitions:
@@ -98,6 +134,22 @@ components:
           artifactType:
             schemaTitle: system.Dataset
             schemaVersion: 0.0.1
+  comp-run-build-trigger:
+    executorLabel: exec-run-build-trigger
+    inputDefinitions:
+      parameters:
+        project_id:
+          parameterType: STRING
+        trigger_id:
+          parameterType: STRING
+  comp-run-build-trigger-2:
+    executorLabel: exec-run-build-trigger-2
+    inputDefinitions:
+      parameters:
+        project_id:
+          parameterType: STRING
+        trigger_id:
+          parameterType: STRING
   comp-train-lr:
     executorLabel: exec-train-lr
     inputDefinitions:
@@ -258,6 +310,80 @@ deploymentSpec:
           \    bucket = client.bucket(bucket)\n    blob = bucket.blob(file_name)\n\
           \    blob.download_to_filename(dataset.path + \".csv\")\n    logging.info('Downloaded\
           \ Data!')\n\n"
+        image: python:3.10.7-slim
+    exec-run-build-trigger:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_build_trigger
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'google-cloud-build'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_build_trigger(project_id:str, trigger_id:str):\n    import\
+          \ sys\n    from google.cloud.devtools import cloudbuild_v1    \n    import\
+          \ logging \n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\
+          \ \n\n    # Create a client\n    client = cloudbuild_v1.CloudBuildClient()\n\
+          \    name = f\"projects/{project_id}/locations/us-central1/triggers/{trigger_id}\"\
+          \n    # Initialize request argument(s)\n    request = cloudbuild_v1.RunBuildTriggerRequest(\
+          \        \n        project_id=project_id,\n        trigger_id=trigger_id,\n\
+          \        name=name\n    )\n\n    # Make the request\n    operation = client.run_build_trigger(request=request)\n\
+          \n    logging.info(\"Trigger the CI-CD Pipeline: \" + trigger_id)\n\n"
+        image: python:3.10.7-slim
+    exec-run-build-trigger-2:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - run_build_trigger
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'google-cloud-build'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.6'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef run_build_trigger(project_id:str, trigger_id:str):\n    import\
+          \ sys\n    from google.cloud.devtools import cloudbuild_v1    \n    import\
+          \ logging \n    logging.basicConfig(stream=sys.stdout, level=logging.INFO)\
+          \ \n\n    # Create a client\n    client = cloudbuild_v1.CloudBuildClient()\n\
+          \    name = f\"projects/{project_id}/locations/us-central1/triggers/{trigger_id}\"\
+          \n    # Initialize request argument(s)\n    request = cloudbuild_v1.RunBuildTriggerRequest(\
+          \        \n        project_id=project_id,\n        trigger_id=trigger_id,\n\
+          \        name=name\n    )\n\n    # Make the request\n    operation = client.run_build_trigger(request=request)\n\
+          \n    logging.info(\"Trigger the CI-CD Pipeline: \" + trigger_id)\n\n"
         image: python:3.10.7-slim
     exec-train-lr:
       container:
@@ -526,6 +652,8 @@ root:
               componentInputParameter: model_repo
             pipelinechannel--project_id:
               componentInputParameter: project_id
+            pipelinechannel--trigger_id_xgb:
+              componentInputParameter: trigger_id_xgb
         taskInfo:
           name: condition-1
         triggerPolicy:
@@ -552,6 +680,8 @@ root:
               componentInputParameter: model_repo
             pipelinechannel--project_id:
               componentInputParameter: project_id
+            pipelinechannel--trigger_id_lr:
+              componentInputParameter: trigger_id_lr
         taskInfo:
           name: condition-2
         triggerPolicy:
@@ -634,6 +764,10 @@ root:
       model_repo:
         parameterType: STRING
       project_id:
+        parameterType: STRING
+      trigger_id_lr:
+        parameterType: STRING
+      trigger_id_xgb:
         parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.14.6
