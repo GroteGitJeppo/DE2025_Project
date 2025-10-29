@@ -1,5 +1,8 @@
 # DE2025 Group 18
 
+![Architecture Diagram](./architecture.png)
+
+
 ## Files explained
 
 ### Builder Tool
@@ -19,4 +22,5 @@ The ui needed for the serving app, with both the templates for the input page an
 
 ### All other files
 Cloud build for the ml app of both models, our original dataset taken from kaggle, our notebook needed to compile the yaml file and the parameters of my google cloud environment (these are not really harmfull to share since they only work in my project)
+
 
